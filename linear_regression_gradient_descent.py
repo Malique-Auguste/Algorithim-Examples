@@ -27,13 +27,14 @@ def Loss():
     
     cost = 0
     i = 0
+    
     while i < m:
         cost += (y_list[i] - Calculate_Y(x_list[i])) ** 2
         i += 1
-    return cost
+    return cost / m
 
 def Calculate_Parameter_Error():
-    global parameters
+    global parameters, x_list, y_list
     return np.transpose(np.matmul(np.transpose(x_list) , (Calculate_Y(x_list) - y_list)))
 
 def Gradient_Descent():
@@ -49,11 +50,11 @@ def Gradient_Descent():
     i = 0
     while i < max_iterations:
         if i % 200 == 0:
-            print("\nLoss: " + str(Loss()) + "\tIteration: " + str(i))
+            print(f"\nLoss: {Loss()}\tIteration: {i}")
             print("Parameters: " + str(parameters))
         elif i == max_iterations - 1:
-            print("\nLoss: " + str(Loss()) + "\tIteration: " + str(i))
-            print("Parameters: " + str(parameters))
+            print(f"\nLoss: {Loss()}\tIteration: {i}")
+            print(f"Parameters: {parameters}")
     
         parameters -= learning_rate * Calculate_Parameter_Error()
 
@@ -66,8 +67,8 @@ def Gradient_Descent():
         
     if Loss() > lowest_loss:
         print("\n\nThe final loss value obtained was greater than the lowest loss obtained.")
-        print("\nLowest Loss: " + str(lowest_loss) + "\t iteration: " + str(lowest_iteration))
-        print("Lowest Parameters:" + str(lowest_parameter))
+        print(f"\nLowest Loss: {lowest_loss}\t iteration: {lowest_iteration}")
+        print(f"Lowest Parameters: {lowest_parameter}")
         print("\n")
 
 def Test_Parameters():
@@ -79,7 +80,7 @@ def Test_Parameters():
 
         count=0
         while count < parameters.shape[1]:
-            x_list_input.append(input("Enter x"+str(count)+" value here: "))
+            x_list_input.append(input(f"Enter x{count} value here: "))
 
             #If enterd value is not a number the program quits
             try:
@@ -89,7 +90,7 @@ def Test_Parameters():
             count += 1
 
         x_list_input = np.array(x_list_input)
-        print("Probablility of entered values equaling 1 is: "+str(Calculate_Y(x_list_input)))
+        print(f"Probablility of entered values equaling 1 is: {Calculate_Y(x_list_input)}")
         print()
 
 Initialise()
