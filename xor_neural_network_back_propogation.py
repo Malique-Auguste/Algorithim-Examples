@@ -7,9 +7,9 @@ y_list = np.array([[1],         [1],        [0],        [0]])
 #weights
 parameters = []
 #The error calculated for a single x value
-single_change = []
+small_delta = []
 #The error calculated for the entire training data
-total_change = []
+total_delta = []
 
 #x_propogated is often denoted as the 'activation' values of each layer.
 x_propogated = []
@@ -26,11 +26,12 @@ max_iterations = 10001
 
 
 def Initialise():
-    global x_propogated, m, l, k, total_change, single_change, y_list, x_list, parameters
+    global x_propogated, m, l, k, total_delta, small_delta, y_list, x_list, parameters
 
     print("\nBeginning initialisation...")
 
     #Initialises the parameters of each layer to random values.
+    #for any array of paramaters, size = (number of neurons, number of inputs)
     parameters = [np.random.normal(0, 1, size= (2, 3)), np.random.normal(0, 1, size =(1, 3))]
 
     #Creates the shape of x_propogated from the list of parameters
@@ -91,14 +92,14 @@ def Loss(params):
     return cost[0] 
 
 def Back_Propogation():
-    global l, x_list, single_change, total_change, parameters, m
-    single_change.clear()
-    total_change.clear()
+    global l, x_list, small_delta, total_delta, parameters, m
+    small_delta.clear()
+    total_delta.clear()
 
     #Creates the shape of the change varables
     for param in parameters:
-        single_change.append(param)
-        total_change.append(np.zeros(param.shape))
+        small_delta.append(param)
+        total_delta.append(np.zeros(param.shape))
 
     i = 0
     while i < m:
@@ -109,16 +110,22 @@ def Back_Propogation():
         while l_ > -1:
             #if at last layer in neural network the error of the layer is calculated for a specific x-value
             if l_ == l - 1:
-                single_change[l_] =  x_propogated[l_] - y_list[i]
+                small_delta[l_] =  x_propogated[l_] - y_list[i]
             
             #the error of each subsequent layer is calculated  for a specific x-value
             else:
+                
                 sigmoid_derivative = x_propogated[l_] * (1 - x_propogated[l_])
                 sigmoid_derivative = np.delete(sigmoid_derivative, 0)
-                
-                temp = np.transpose(parameters[l_ + 1]) * single_change[l_ + 1]
-                temp = np.delete(temp, 0)
-                single_change[l_] = temp * sigmoid_derivative
+                temp = np.transpose(parameters[l_ + 1]) * small_delta[l_ + 1]
+                #removing the bias unit from this array
+                temp = np.delete(np.transpose(temp), 0, 1)
+                if temp.shape[0] == 1:
+                    temp = temp[0,...]
+                if len(temp.shape) > 1:
+                    if temp.shape[0] >= 1:
+                        temp = np.sum(temp,0)
+                small_delta[l_] = temp * sigmoid_derivative
             l_ -= 1
 
         l_ = l - 1
@@ -128,19 +135,18 @@ def Back_Propogation():
                 x = x_list[i]
                 #Remove bias unit from x 
                 x = np.delete(x_list[i], 0)
-                temp = np.hstack(((single_change[l_][..., np.newaxis], single_change[l_][..., np.newaxis] * x)))
-                total_change[l_] += temp
+                total_delta[l_] += np.transpose(small_delta[l_][np.newaxis]) * x_list[i]
             
             #the error of the each other layer is calculated using the propogated x values and added to the total error
             else:
-                total_change[l_] += np.transpose(single_change[l_]) * x_propogated[l_ - 1]
+                total_delta[l_] += np.transpose(small_delta[l_][np.newaxis]) * x_propogated[l_ - 1]
             l_ -= 1
             
 
         i += 1
     
-    #At the end of back-propogation the averaged total_change of all layers are found
-    for change in total_change:
+    #At the end of back-propogation the averaged total_delta of all layers are found
+    for change in total_delta:
         change /= m
 
 def Gradient_Descent():
@@ -159,18 +165,18 @@ def Gradient_Descent():
     while i < max_iterations:
         
         if i % 1000 == 0:
-            print("\nLoss: " + str(Loss(parameters)) + "\tIteration: " + str(i))
+            print(f"\nLoss: {Loss(parameters)}\tIteration: {i}")
             print("Parameters: " + str(parameters))
         elif i == max_iterations - 1:
-            print("\nLoss: " + str(Loss(parameters)) + "\tIteration: " + str(i))
-            print("Parameters: " + str(parameters))
+            print(f"\nLoss: {Loss(parameters)}\tIteration: {i}")
+            print(f"Parameters: {parameters}")
 
         Back_Propogation()
         
         #updates parameters
         j = 0
         while j < len(parameters):
-            parameters[j] -= learning_rate * total_change[j]
+            parameters[j] -= learning_rate * total_delta[j]
             j += 1
 
         if Loss(parameters) < lowest_loss:
@@ -183,8 +189,8 @@ def Gradient_Descent():
 
     if Loss(parameters) > lowest_loss:
         print("\n\nThe final loss value obtained was greater than the lowest loss obtained.")
-        print("\nLowest Loss: " + str(lowest_loss) + "\t iteration: " + str(lowest_iteration))
-        print("Lowest Parameters:" + str(lowest_parameter))
+        print(f"\nLowest Loss: {lowest_loss}\t iteration: {lowest_iteration}")
+        print(f"Lowest Parameters: {lowest_parameter}")
         print("\n")
     
 def TestNeuron():
@@ -195,8 +201,8 @@ def TestNeuron():
         x_list_input = []
 
         count=0
-        for row in range(len(parameters[0][0])):
-            x_list_input.append(input("Enter x"+str(count)+" value here: "))
+        while count < len(parameters[0][0]):
+            x_list_input.append(input(f"Enter x{count} value here: "))
 
             #If enterd value is not a number the program quits
             try:
@@ -207,7 +213,7 @@ def TestNeuron():
 
         x_list_input = np.array(x_list_input)
         Forward_Propogate(x_list_input)
-        print("Probablility of entered values equaling 1 is: "+str(x_propogated[l - 1]))
+        print(f"Probablility of entered values equaling 1 is: {x_propogated[l - 1]}")
         print()
 
 
