@@ -1,7 +1,7 @@
 import numpy as np
 
 #Input and ouput values that the neural network will train on
-xList = np.array([[1, 1, 2], [1, 3, 5], [1, 10, 13], [ 1, -2.5, 7]])
+xList = np.array([[1, 1, 1], [1, 3, 5], [1, 10, 13], [ 1, -2.5, 7]])
 yList = np.array([[6], [14.5], [40.5], [6.5]])
 
 #weights
@@ -17,7 +17,7 @@ while True:
     x_list_input = []
     count = 0
     while count < parameters.shape[0]:
-        x_list_input.append(input("Enter x"+str(count)+" value here: "))
+        x_list_input.append(input("Enter x{count} value here: "))
 
         #If enterd value is not a number the program quits
         try:
@@ -27,4 +27,4 @@ while True:
         count += 1
 
     x_list_input = np.array(x_list_input)
-    print("corresponding y value is: "+str(np.matmul(x_list_input, parameters)))
+    print(f"corresponding y value is: {np.matmul(x_list_input, parameters)}")
