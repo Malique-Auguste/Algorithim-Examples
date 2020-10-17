@@ -22,8 +22,8 @@ l = 0
 m = 7
 
 learning_rate = 0.1
-lambada = 0.0000005
-max_iterations = 50
+lambada = 0.005
+max_iterations = 200
 
 
 def Initialise():
@@ -33,7 +33,10 @@ def Initialise():
 
     #Initialises the parameters of each layer to random values.
     #for any array of paramaters, size = (number of neurons, number of inputs)
-    parameters = [np.random.normal(0, 1, size= (2, 3)), np.random.normal(0, 1, size =(1, 3))]
+    parameters = [np.random.normal(0, 1, size= (4, 3)), np.random.normal(0, 1, size =(1, 5))]
+    #parameters = [np.array([[ 0.40043488,  0.67143581, -0.86656898],
+    #   [ 1.32835477,  0.51482289,  0.12318143]]), np.array([[-3.80462181e-04,  1.99864387e+00, -9.14746727e-01]])]
+
 
     #Creates the shape of x_propogated from the list of parameters
     for param in parameters:
@@ -116,7 +119,7 @@ def Loss(params):
         i += 1
 
     h = np.transpose(np.array(h)[np.newaxis])
-    #print(h);
+    #print(h)
     cost = np.sum(np.power(y_list - h, 2) + Regularise_Parameters(parameters)) / m
 
     return cost
@@ -191,7 +194,7 @@ def Gradient_Descent():
     i = 0
     while i < max_iterations:
         
-        if i % 10 == 0:
+        if i % 50 == 0:
             print(f"\nLoss: {Loss(parameters)}\tIteration: {i}")
             print("Parameters: " + str(parameters))
         elif i == max_iterations - 1:
