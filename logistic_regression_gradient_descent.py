@@ -10,6 +10,7 @@ parameters = np.random.normal(0, 1, (3,3))
 
 max_iterations = 1000
 learning_rate = 0.01
+lambada = 0.0005
 
 #number of ouputs
 k = 1
@@ -25,6 +26,26 @@ def Initialise():
 
     k = parameters.shape[0]
   
+def Regularise_Parameters(parameters, sum_ = True):
+    global lambada
+
+    if not sum_:
+        return parameters * lambada
+
+    r = 0
+    for parameter in parameters:
+        i = 0
+        while i < parameter.shape[0]:
+            if len(parameter.shape) > 1:
+                j = 0
+                while j < parameter.shape[1]:
+                    r += parameter[i,j] ** 2
+                    j += 1
+            else:
+                r += parameter[i] ** 2
+            i += 1
+    return r * lambada
+
 def Sigmoid(x, parameters):
     z = (np.matmul(x,  np.transpose(parameters)))
     return 1 / (1 + np.exp(np.negative(z)))
@@ -49,7 +70,7 @@ def Loss():
         for x in x_list:
             h.append(Sigmoid(x, parameters[class_]))
         h = np.transpose(np.array(h)[np.newaxis])
-        cost.append(np.matmul(np.negative(new_y_list).T, np.log(h)) - np.matmul((1 - new_y_list).T, np.log(1 - h)))
+        cost.append(np.matmul(np.negative(new_y_list).T, np.log(h)) - np.matmul((1 - new_y_list).T, np.log(1 - h)) + Regularise_Parameters(parameters) )
         cost[class_] /= m
         class_ += 1  
     return cost  
@@ -92,7 +113,7 @@ def Gradient_Descent():
             print(f"\nLoss: {Loss()}\tIteration: {i}")
             print(f"Parameters: {parameters}")
     
-        parameters -= learning_rate * Calculate_Parameter_Error()
+        parameters -= (learning_rate * Calculate_Parameter_Error()) + Regularise_Parameters(parameters, False)
 
         j = 0
         while j < len(Loss()):

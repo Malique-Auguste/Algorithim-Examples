@@ -2,7 +2,7 @@ import numpy as np
 
 #Input and ouput values that the neural network will train on
 x_list = np.array([[1, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0]])
-y_list = np.array([[1],         [1],        [0],        [0]])
+y_list = np.array([[10],       [10],        [0],        [0]])
 
 #weights
 parameters = []
@@ -22,8 +22,8 @@ l = 0
 m = 7
 
 learning_rate = 0.1
-lambada = 0.0005
-max_iterations = 20001
+lambada = 0.0000005
+max_iterations = 50
 
 
 def Initialise():
@@ -47,34 +47,38 @@ def Initialise():
         if y > k:
             k = y
   
-def Sigmoid(x, param):
+def Relu(x, param):
     z = (np.matmul(x,  np.transpose(param)))
-    return 1 / (1 + np.exp(np.negative(z)))
+    for i in range(len(z)):
+        if z[i] < 0:
+            z[i] =  z[i] * 0.01
+    return z
+
+def ReluError(x):
+    z = np.copy(x)
+    for i in range(len(z)):
+        if z[i] < 0:
+            z[i] =  0.01
+        else:
+            z[i] = 1
+    return z
 
 def Forward_Propogate(x_row):
     global x_propogated, parameters
 
     #Calculates the activation value of the first layer
-    x_propogated[0] = Sigmoid(x_row, parameters[0])
+    x_propogated[0] = Relu(x_row, parameters[0])
     #Adds a bias unit to x_propogated (activation) so that it can be immediately used to calculate the activation of the next layer
     x_propogated[0] = np.hstack((np.ones(1), x_propogated[0]))
 
     i = 1
     while i < l:
         #Calculates the activation value of every subsequent layer
-        x_propogated[i] = Sigmoid(x_propogated[i - 1], parameters[i])
+        x_propogated[i] = Relu(x_propogated[i - 1], parameters[i])
         if i != l - 1:
             #If this is not the last activation value(neural network output) a bias unit is added to x_propgated
             x_propogated[i] = np.hstack((np.ones(1), x_propogated[i]))
         i += 1
-
-def Prevent_Error(y):
-    #To prevent the divide by zero error in the cost function the vlue is changed by a little bit
-    if y == 1:
-        y = 0.999999
-    elif y == 0:
-        y = 0.000001
-    return y
 
 def Regularise_Parameters(parameters, sum_ = True):
     global lambada
@@ -108,17 +112,14 @@ def Loss(params):
     h = []
     while i < m:
         Forward_Propogate(x_list[i])
-        h.append(Prevent_Error(x_propogated[l - 1]))
+        h.append(x_propogated[l - 1])
         i += 1
-        print(h)
 
     h = np.transpose(np.array(h)[np.newaxis])
-    print(h)
-    print(y_list)
-    print(np.matmul(np.negative(y_list).T, np.log(h)))
-    cost = ((np.matmul(np.negative(y_list).T, np.log(h)) - np.matmul((1 - y_list).T, np.log(1 - h))) / m) + Regularise_Parameters(parameters)
+    #print(h);
+    cost = np.sum(np.power(y_list - h, 2) + Regularise_Parameters(parameters)) / m
 
-    return cost[0] 
+    return cost
 
 def Back_Propogation():
     global l, x_list, small_delta, total_delta, parameters, m
@@ -144,8 +145,8 @@ def Back_Propogation():
             #the error of each subsequent layer is calculated  for a specific x-value
             else:
                 
-                sigmoid_derivative = x_propogated[l_] * (1 - x_propogated[l_])
-                sigmoid_derivative = np.delete(sigmoid_derivative, 0)
+                relu_derivative = ReluError(x_propogated[l_])
+                relu_derivative = np.delete(relu_derivative, 0)
                 temp = np.transpose(parameters[l_ + 1]) * small_delta[l_ + 1]
                 #removing the bias unit from this array
                 temp = np.delete(np.transpose(temp), 0, 1)
@@ -154,7 +155,7 @@ def Back_Propogation():
                 if len(temp.shape) > 1:
                     if temp.shape[0] >= 1:
                         temp = np.sum(temp,0)
-                small_delta[l_] = temp * sigmoid_derivative
+                small_delta[l_] = temp * relu_derivative
             l_ -= 1
 
         l_ = l - 1
@@ -190,7 +191,7 @@ def Gradient_Descent():
     i = 0
     while i < max_iterations:
         
-        if i % 1000 == 0:
+        if i % 10 == 0:
             print(f"\nLoss: {Loss(parameters)}\tIteration: {i}")
             print("Parameters: " + str(parameters))
         elif i == max_iterations - 1:
@@ -202,9 +203,12 @@ def Gradient_Descent():
         #updates parameters
         j = 0
         while j < len(parameters):
-            parameters[j] -= (learning_rate * total_delta[j]) + Regularise_Parameters(parameters, False)[j]
+            parameters[j] -= (learning_rate * total_delta[j]) #+ Regularise_Parameters(parameters, False)[j]
             j += 1
 
+        i += 1
+
+'''
         if Loss(parameters) < lowest_loss:
             lowest_loss = Loss(parameters)
             lowest_iteration = i
@@ -218,6 +222,7 @@ def Gradient_Descent():
         print(f"\nLowest Loss: {lowest_loss}\t iteration: {lowest_iteration}")
         print(f"Lowest Parameters: {lowest_parameter}")
         print("\n")
+'''
     
 def TestNetwork():
     global parameters
@@ -245,10 +250,7 @@ def TestNetwork():
 
 
 Initialise()
-'''
-print(Regularise_Parameters(parameters, False))
 print(parameters)
+print(Loss(parameters))
 Gradient_Descent()
 TestNetwork()
-'''
-print(Loss(parameters))

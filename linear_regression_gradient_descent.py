@@ -11,6 +11,7 @@ parameters = np.random.normal(0, 1, (1,3))
 m = 0
 
 learning_rate = 0.01
+lambada = 0.0005
 max_iterations = 2000
 
 def Initialise():
@@ -21,6 +22,26 @@ def Calculate_Y(x):
     global parameters
     return np.matmul(x, np.transpose(parameters))
 
+def Regularise_Parameters(parameters, sum_ = True):
+    global lambada
+
+    if not sum_:
+        return parameters * lambada
+
+    r = 0
+    for parameter in parameters:
+        i = 0
+        while i < parameter.shape[0]:
+            if len(parameter.shape) > 1:
+                j = 0
+                while j < parameter.shape[1]:
+                    r += parameter[i,j] ** 2
+                    j += 1
+            else:
+                r += parameter[i] ** 2
+            i += 1
+    return r * lambada
+
 def Loss():
     global parameters, x_list, y_list, m
     #Calculates the squared error
@@ -29,10 +50,10 @@ def Loss():
     i = 0
     
     while i < m:
-        cost += (y_list[i] - Calculate_Y(x_list[i])) ** 2
+        cost += (y_list[i] - Calculate_Y(x_list[i])) ** 2 + Regularise_Parameters(parameters)
         i += 1
     return cost / m
-
+        
 def Calculate_Parameter_Error():
     global parameters, x_list, y_list
     return np.transpose(np.matmul(np.transpose(x_list) , (Calculate_Y(x_list) - y_list)))
@@ -56,7 +77,7 @@ def Gradient_Descent():
             print(f"\nLoss: {Loss()}\tIteration: {i}")
             print(f"Parameters: {parameters}")
     
-        parameters -= learning_rate * Calculate_Parameter_Error()
+        parameters -= learning_rate * Calculate_Parameter_Error() + Regularise_Parameters(parameters, False)
 
         if Loss() < lowest_loss:
             lowest_loss = Loss()
@@ -94,5 +115,7 @@ def Test_Parameters():
         print()
 
 Initialise()
+print(Regularise_Parameters(parameters))
 Gradient_Descent()
+print(Regularise_Parameters(parameters))
 Test_Parameters()
